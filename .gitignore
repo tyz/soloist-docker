@@ -2,4 +2,4 @@
 !.gitignore
 !.github
 opencode.json
-soloist_release_arm64.tar.gz
+soloist_release_*.tar.gz

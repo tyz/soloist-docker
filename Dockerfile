@@ -2,6 +2,7 @@
 
 FROM debian:trixie-slim
 
+ARG TARGETARCH
 ARG SOLOIST_VERSION=dev
 LABEL org.opencontainers.image.version="${SOLOIST_VERSION}"
 
@@ -23,7 +24,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libpipewire-0.3-0 \
         libpipewire-0.3-modules
 
-COPY soloist_release_arm64.tar.gz /app/
-RUN tar -xzf soloist_release_arm64.tar.gz && rm soloist_release_arm64.tar.gz
+COPY soloist_release_${TARGETARCH}.tar.gz /app/
+RUN tar -xzf soloist_release_${TARGETARCH}.tar.gz && rm soloist_release_${TARGETARCH}.tar.gz
 
 ENTRYPOINT ["/app/soloist"]
