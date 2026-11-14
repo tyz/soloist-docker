@@ -1,0 +1,47 @@
+# Example Docker Compose setup for Spotify Soloist (ARM64 / Raspberry Pi).
+#
+# Soloist needs an API key, access to the host audio server, and a persistent
+# data directory so the Spotify Connect pairing survives container restarts.
+#
+# Create a .env file next to this file:
+#
+#   SOLOIST_API_KEY=your-soloist-api-key
+#   SOLOIST_DEVICE_NAME=Kitchen speaker
+#
+# Then start it with:
+#
+#   docker compose up -d
+#
+# The host user's PipeWire session is mounted below. The examples assume uid
+# 1000, which is the default user on Raspberry Pi OS; adjust if yours differs.
+
+services:
+  soloist:
+    image: ghcr.io/tyz/soloist-docker:latest
+    container_name: soloist
+    restart: unless-stopped
+
+    # Spotify Connect discovery works best when the container shares the
+    # host network. The audio itself still goes through PipeWire.
+    network_mode: host
+
+    environment:
+      XDG_RUNTIME_DIR: /run/user/1000
+
+    command:
+      - --device-name
+      - ${SOLOIST_DEVICE_NAME:-Soloist}
+      - --api-key
+      - ${SOLOIST_API_KEY:?set SOLOIST_API_KEY in .env}
+      - --data-dir
+      - /data
+      # Add --ws 0.0.0.0:8765 to enable the optional WebSocket API.
+
+    volumes:
+      # Spotify Connect session and device state.
+      - soloist-data:/data
+      # PipeWire (and its PulseAudio compatibility socket) from the host.
+      - /run/user/1000:/run/user/1000
+
+volumes:
+  soloist-data:

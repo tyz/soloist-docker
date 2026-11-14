@@ -1,0 +1,78 @@
+# Example Kubernetes manifests for Spotify Soloist on a single-node k3s cluster
+# running on an ARM64 device such as a Raspberry Pi.
+#
+# Create the API key secret first:
+#
+#   kubectl create secret generic soloist --from-literal=api-key='your-soloist-api-key'
+#   kubectl apply -f k8s.yaml
+#
+# The pod mounts the node's /run/user/1000 directory to reach the PipeWire
+# socket of the host user. Adjust the path if your audio user has another uid.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: soloist-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soloist
+  labels:
+    app: soloist
+spec:
+  replicas: 1
+  # Only one Soloist process may use the data directory at a time, and a
+  # Spotify Connect device is a singleton.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: soloist
+  template:
+    metadata:
+      labels:
+        app: soloist
+    spec:
+      # Share the node network so Spotify Connect discovery stays on the LAN.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: soloist
+          image: ghcr.io/tyz/soloist-docker:latest
+          args:
+            - --device-name
+            - Soloist
+            - --api-key
+            - $(SOLOIST_API_KEY)
+            - --data-dir
+            - /data
+            # Add --ws 0.0.0.0:8765 to enable the optional WebSocket API.
+          env:
+            - name: SOLOIST_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: soloist
+                  key: api-key
+            - name: XDG_RUNTIME_DIR
+              value: /run/user/1000
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: pipewire
+              mountPath: /run/user/1000
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: soloist-data
+        - name: pipewire
+          hostPath:
+            path: /run/user/1000
+            type: Directory
