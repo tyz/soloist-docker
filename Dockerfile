@@ -2,6 +2,9 @@
 
 FROM debian:trixie-slim
 
+ARG SOLOIST_VERSION=dev
+LABEL org.opencontainers.image.version="${SOLOIST_VERSION}"
+
 WORKDIR /app
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -20,6 +23,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libpipewire-0.3-0 \
         libpipewire-0.3-modules
 
-RUN curl -sfL https://soloist-builds.spotifycdn.com/soloist_release_arm64.tar.gz | tar -xzf -
+COPY soloist_release_arm64.tar.gz /app/
+RUN tar -xzf soloist_release_arm64.tar.gz && rm soloist_release_arm64.tar.gz
 
 ENTRYPOINT ["/app/soloist"]
