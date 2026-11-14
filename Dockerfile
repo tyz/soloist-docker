@@ -27,4 +27,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 COPY soloist_release_${TARGETARCH}.tar.gz /app/
 RUN tar -xzf soloist_release_${TARGETARCH}.tar.gz && rm soloist_release_${TARGETARCH}.tar.gz
 
+USER 1000
+
 ENTRYPOINT ["/app/soloist"]
