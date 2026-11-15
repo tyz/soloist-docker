@@ -8,7 +8,7 @@ on:
       - '.github/workflows/**'
   workflow_dispatch:
   schedule:
-    - cron: '17 17 1 * *'  # 1st day of the month
+    - cron: '53 20 * * 5'  # every Friday
 
 env:
   REGISTRY: ghcr.io

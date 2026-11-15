@@ -8,18 +8,8 @@
 #
 # The pod mounts the node's /run/user/1000 directory to reach the PipeWire
 # socket of the host user. Adjust the path if your audio user has another uid.
+# The cache and data dirs are mounted on a memory fs, to avoid (slow) writes to the SD card.
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: soloist-data
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -48,12 +38,13 @@ spec:
         - name: soloist
           image: ghcr.io/tyz/soloist-docker:latest
           args:
-            - --device-name
-            - Soloist
-            - --api-key
-            - $(SOLOIST_API_KEY)
-            - --data-dir
-            - /data
+            - --device-name=Soloist
+            - --api-key=$(SOLOIST_API_KEY)
+            - --data-dir=/tmp
+            - --cache-dir=/tmp
+            - --cache-size=100
+            - --initial-volume=100
+            - --verbose
             # Add --ws 0.0.0.0:8765 to enable the optional WebSocket API.
           env:
             - name: SOLOIST_API_KEY
@@ -65,14 +56,22 @@ spec:
               value: /run/user/1000
           volumeMounts:
             - name: data
-              mountPath: /data
+              mountPath: /tmp
             - name: pipewire
               mountPath: /run/user/1000
+            - name: pipewire-conf
+              mountPath: /usr/share/pipewire/client.conf
+              readOnly: true
       volumes:
         - name: data
-          persistentVolumeClaim:
-            claimName: soloist-data
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
         - name: pipewire
           hostPath:
             path: /run/user/1000
             type: Directory
+        - name: pipewire-conf
+          hostPath:
+            path: /usr/share/pipewire/client.conf
+            type: File

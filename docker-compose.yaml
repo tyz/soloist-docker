@@ -20,6 +20,7 @@ services:
     image: ghcr.io/tyz/soloist-docker:latest
     container_name: soloist
     restart: unless-stopped
+    user: "1000:1000"
 
     # Spotify Connect discovery works best when the container shares the
     # host network. The audio itself still goes through PipeWire.
@@ -29,12 +30,10 @@ services:
       XDG_RUNTIME_DIR: /run/user/1000
 
     command:
-      - --device-name
-      - ${SOLOIST_DEVICE_NAME:-Soloist}
-      - --api-key
-      - ${SOLOIST_API_KEY:?set SOLOIST_API_KEY in .env}
-      - --data-dir
-      - /data
+      - --device-name=${SOLOIST_DEVICE_NAME:-Soloist}
+      - --api-key=${SOLOIST_API_KEY:?set SOLOIST_API_KEY in .env}
+      - --data-dir=/data
+      - --cache-dir=/data
       # Add --ws 0.0.0.0:8765 to enable the optional WebSocket API.
 
     volumes:
@@ -42,6 +41,8 @@ services:
       - soloist-data:/data
       # PipeWire (and its PulseAudio compatibility socket) from the host.
       - /run/user/1000:/run/user/1000
+      # PipeWire client config from the host.
+      - /usr/share/pipewire/client.conf:/usr/share/pipewire/client.conf
 
 volumes:
   soloist-data:
