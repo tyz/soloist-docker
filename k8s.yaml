@@ -39,7 +39,6 @@ spec:
           image: ghcr.io/tyz/soloist-docker:latest
           args:
             - --device-name=Soloist
-            - --api-key=$(SOLOIST_API_KEY)
             - --data-dir=/tmp
             - --cache-dir=/tmp
             - --cache-size=100
@@ -47,6 +46,10 @@ spec:
             - --verbose
             # Add --ws 0.0.0.0:8765 to enable the optional WebSocket API.
           env:
+            # The entrypoint saves this key in the data directory before
+            # starting Soloist. The memory-backed data directory below is
+            # wiped when the pod is recreated, so the key is needed on every
+            # start.
             - name: SOLOIST_API_KEY
               valueFrom:
                 secretKeyRef:

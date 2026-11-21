@@ -8,6 +8,10 @@
 #   SOLOIST_API_KEY=your-soloist-api-key
 #   SOLOIST_DEVICE_NAME=Kitchen speaker
 #
+# The entrypoint stores SOLOIST_API_KEY in the data volume before Soloist
+# starts, so the key is not passed on the command line. After the first start
+# it can be removed from .env; Soloist then uses the stored key.
+#
 # Then start it with:
 #
 #   docker compose up -d
@@ -28,10 +32,11 @@ services:
 
     environment:
       XDG_RUNTIME_DIR: /run/user/1000
+      # Saved to /data by the entrypoint. Optional after the first start.
+      SOLOIST_API_KEY: ${SOLOIST_API_KEY:-}
 
     command:
       - --device-name=${SOLOIST_DEVICE_NAME:-Soloist}
-      - --api-key=${SOLOIST_API_KEY:?set SOLOIST_API_KEY in .env}
       - --data-dir=/data
       - --cache-dir=/data
       # Add --ws 0.0.0.0:8765 to enable the optional WebSocket API.

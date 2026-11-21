@@ -8,6 +8,10 @@ LABEL org.opencontainers.image.version="${SOLOIST_VERSION}"
 
 WORKDIR /app
 
+# Named volumes mounted at /data (as in docker-compose.yaml) inherit this
+# ownership, so the unprivileged user can store the API key and pairing data.
+RUN install -d -o 1000 -g 1000 /data
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
@@ -27,6 +31,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 COPY soloist_release_${TARGETARCH}.tar.gz /app/
 RUN tar -xzf soloist_release_${TARGETARCH}.tar.gz && rm soloist_release_${TARGETARCH}.tar.gz
 
+COPY --chmod=0755 entrypoint.sh /app/entrypoint.sh
+
 USER 1000
 
-ENTRYPOINT ["/app/soloist"]
+ENTRYPOINT ["/app/entrypoint.sh"]
